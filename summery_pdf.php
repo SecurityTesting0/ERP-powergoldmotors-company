@@ -1,0 +1,125 @@
+<?php
+require('pdf/fpdf.php');
+include("lib/config.php");
+include("lib/database.php");
+include("lib/helper.php");
+$db = new Database();
+$fm = new Formate();
+
+
+if (isset($_POST['submit'])){
+	$date 	= $_POST['date'];
+	}else{
+	echo"No Data Found";
+	}
+
+//get invoices data
+$query = "SELECT * FROM `salary_payment` WHERE `gn_date` LIKE '$date%'";
+$getdata=$db->select($query);
+$id=0;	
+						
+//A4 width : 219mm
+//default margin : 10mm each side
+//writable horizontal : 219-(10*2)=189mm
+
+$pdf = new FPDF('L','mm','A4');// for custome page array(100,150)
+
+$pdf->AddPage();
+//set font to arial, bold, 14pt
+
+//set font to arial, regular, 12pt
+$pdf->Image('img/logo.png',20,10,30,30);
+
+$pdf->SetFont('Arial','B',20);
+$pdf->SetTextColor(176,4,4);
+$pdf->Cell(90	,10,'',0,1,'R'); //end of line 16/41, MissionPara Road,Narayanganj Sadar, Narayanganj',0,1,'C'); //end of line 
+$pdf->Cell(90	,10,'Missionpara',0,0,'R'); //end of line 16/41, MissionPara Road,Narayanganj Sadar, Narayanganj',0,1,'C'); //end of line 
+$pdf->SetTextColor(2,112,38);
+$pdf->Cell(50	,10,'Jame-E-Masjid',0,1,'L'); //end of line 16/41, MissionPara Road,Narayanganj Sadar, Narayanganj',0,1,'C'); //end of line 
+
+$pdf->SetFont('Arial','',12);
+$pdf->SetTextColor(0,0,0);
+$pdf->Cell(45	,6,'',0,0,'L'); //end of line 16/41, MissionPara Road,Narayanganj Sadar, Narayanganj',0,1,'C'); //end of line 
+$pdf->Cell(190	,6,'Address: 16/41, Missionpara Road,',0,1,'L'); //end of line 16/41, MissionPara Road,Narayanganj Sadar, Narayanganj',0,1,'C'); //end of line 
+$pdf->Cell(45	,6,'',0,0,'L'); //end of line 16/41, MissionPara Road,Narayanganj Sadar, Narayanganj',0,1,'C'); //end of line 
+$pdf->Cell(190	,6,'Narayanganj Sadar, Narayanganj',0,1,'L'); //end of line 16/41, MissionPara Road,Narayanganj Sadar, Narayanganj',0,1,'C'); //end of line 
+
+$pdf->Cell(180	,10,'',0,1,'C'); 
+
+$pdf->SetFont('Arial','B',20);
+$pdf->SetTextColor(2,112,38);
+$pdf->Cell(260	,10,'Salary Sheet',0,1,'C');
+
+$pdf->SetFont('Arial','B',14);
+$pdf->Cell(30	,10,'Month of Salary:',0,0,'L');
+$pdf->Cell(50	,10,$date,0,1,'C');
+
+
+$pdf->SetFont('Arial','B',12);
+$pdf->SetTextColor(0,0,0);
+$pdf->SetFillColor(223,240,216);//sample of the heading with use fill boolean fliped (the 1 after the 'C')
+$pdf->Cell(20	,10,'S.L NO',1,0,'C',true);
+$pdf->Cell(30	,10,'Employee_id',1,0,'C',true);
+$pdf->Cell(45	,10,'Name',1,0,'C',true);
+$pdf->Cell(40	,10,'Desigination',1,0,'C',true);
+$pdf->Cell(30	,10,'Amount',1,0,'C',true);//end of line
+$pdf->Cell(100	,10,'Employees Signature',1,1,'C',true);//end of line
+
+$id=0; 
+if($getdata==true) {
+	while($getres=$getdata->fetch_assoc()){
+	$id++; 
+	$emid=$getres['Employee_id'];
+	
+	$pdf->SetFont('Arial','',12);
+	$pdf->SetFillColor(243,243,243);
+	$pdf->Cell(20	,15,$id,1,0,'C',true);
+	$pdf->Cell(30	,15,$getres['Employee_id'],1,0,'C',true);
+			
+		$query3="SELECT * FROM employee";
+		$res=$db->select($query3);
+		if ($res){
+		while($emr=$res->fetch_assoc()){
+			$emidcx=$emr['Employee_id'];
+			if ($emidcx==$emid) {
+				
+					$pdf->Cell(45	,15,$emr['First_Name'].' '.$emr['Last_Name'],1,0,'C',true);
+					$pdf->Cell(40	,15,$emr['Desigination'],1,0,'C',true);
+				}
+			}
+		}
+	$pdf->cell(30	,15,number_format((float)$getres['salary_amount'], 2, '.', ','),1,0,'',true);	
+	$pdf->cell(100	,15,'',1,1,'C',true);	
+	}
+}
+
+$query2 = "select sum(salary_amount) as am from salary_payment WHERE gn_date LIKE '$date%'";
+$getdata2=$db->select($query2);
+
+if($getdata==true) {
+	while($getres2=$getdata2->fetch_assoc()){
+	
+	
+	//Cell(width , height , text , border , end line , [align] )
+	
+	$pdf->SetFont('Arial','B',12);
+	$pdf->SetFillColor(223,240,216);
+	$pdf->Cell(135	,10,'Total=',1,0,'R',true);
+	$pdf->Cell(30	,10,number_format((float)$getres2['am'], 2, '.', ','),1,0,'L',true);
+	$pdf->Cell(100	,10,'',1,1,'L',true);//end of line	}
+	}
+}
+
+
+$pdf->Cell(180	,10,'',0,1,'C'); 
+$pdf->Cell(180	,10,'',0,1,'C'); 
+$pdf->Cell(20	,4,'--------------------------',0,0,'L');//end of line
+$pdf->Cell(230	,4,'-------------------------------------------',0,1,'R');//end of line
+$pdf->Cell(20	,4,'Signature Cashier',0,0,'L');//end of line
+$pdf->Cell(230	,4,'Signature Secratary/President',0,0,'R');//end of line
+
+$pdf->Output();
+
+?>
+
+<?php include('inc/footer.php'); ?>
